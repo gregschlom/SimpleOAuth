@@ -1,0 +1,114 @@
+SimpleOauth
+===========
+
+	SimpleOauth is a OAuth library for Qt that follows the "less is more" principle.
+
+Understanding OAuth
+===================
+
+	The OAuth protocol can be quite confusing. Here are some quick tips that will help you get started
+
+	1. Signing requests
+	Every request you make to the server must be signed, even if you don't have a valid access token yet. Signing your request is easy. Just call the Token::signRequest method with the URL you want to access.
+
+	Note: the request signature depends on the URL, including GET and POST parameters. Currently, only GET parameters are supported.
+
+	2. Getting a valid AccessToken
+	The AccessToken is what enables you to access the protected resources on the server. To get an AccessToken, you must first get a RequestToken from the server, open a web page to let the user authorize the RequestToken, and then ask the server to exchange the user-authorized RequestToken for an AccessToken.
+
+	SimpleOauth provides the OAuth::Helper class to make it easy to get an AccessToken. See the Basic Usage section below.
+
+	Once you have a valid AccessToken, you should save it and reuse it for all the future interactions with the server.
+
+Basic usage
+===========
+
+	1. Create a OAuth::Helper instance and connect to the signals
+	
+		m_oauthHelper = new Helper(this);
+		connect(m_oauthHelper, SIGNAL(requestTokenReceived(OAuth::Token)), this, SLOT(requestTokenReceived(OAuth::Token)));
+		connect(m_oauthHelper, SIGNAL(accessTokenReceived(OAuth::Token)), this, SLOT(accessTokenReceived(OAuth::Token)));
+		
+	2. Create an invalid token with your consumer key and secret, and call Helper::getRequestToken
+	
+		OAuth::Token tempToken;	
+		tempToken.setConsumerKey("xxx");
+		tempToken.setConsumerSecret("xxxxxxxxx");
+		tempToken.setCallbackUrl(QUrl("http://example.com"));
+		
+		m_oauthHelper->getRequestToken(tempToken, QUrl("https://www.google.com/accounts/OAuthGetRequestToken?scope=https://mail.google.com/"));
+		
+	3. Upon reception of the requestTokenReceived signal, check that the RequestToken is valid and let the user authorize it
+	
+		void MyClass::requestTokenReceived(OAuth::Token token)
+		{	
+			if (token.type() == Token::RequestToken)
+				m_oauthHelper->getUserAuthorization(token, QUrl("https://www.google.com/accounts/OAuthAuthorizeToken"));
+			else
+				// the request to get the RequestToken failed...
+		}
+		
+	4. Get the verifier code back
+		You could simply set a webpage that displays the verifier code and ask your user to copy/paste the code into your app, or you can try to auto-detect the verifier code.
+		
+		For more information on auto-detection, see: http://sites.google.com/site/oauthgoog/oauth-practices/auto-detecting-approval
+		
+	5. Ask for an AccessToken
+		Once you have the verifer code, set it into the RequestToken you used previously, and pass it to the getAccessToken method of the Helper:
+		
+		void MyClass::getAccessToken(QString verifier)
+		{
+			m_token.setVerifier(verifier);
+			m_oauthHelper->getAccessToken(m_token, QUrl("https://www.google.com/accounts/OAuthGetAccessToken"));
+		}
+		
+	6. Save the AccessToken for later usage
+		Upon reception of the accessTokenReceived signal, save the AccessToken to the disk, and use it to sign any further request you make to the server.
+		
+		void MyClass::accessTokenReceived(OAuth::Token token) 
+		{
+			if (token.type() == Token::AccessToken)
+				// Success !
+				// Now save the token.tokenString() and token.tokenSecret() to a permanent location.
+				// You can for example use QSettings
+			else
+				// the request to get the AccessToken failed...
+		}
+		
+	7. Use the AccessToken for any further interaction with the server
+	
+			OAuth::Token token;
+			token.setType(Token::AccessToken);
+			token.setConsumerKey("xxx");
+			token.setConsumerSecret("xxxxxxxxxx");
+			token.setTokenString( [retrieved from disk] );
+			token.setTokenSecret( [retrieved from disk] );
+		
+			QNetworkRequest request;
+			request.setUrl( [url of the protected resource you want to access] );
+			request.setRawHeader("Authorization", token.signRequest(request.url()));
+			m_networkManager->get(request);
+
+Limitations
+=========
+
+	1. No POST requests
+	
+	Currently, only GET requests are supported. If you need to make POST request to the server, they are likely to fail. Feel free to submit any patch to fix this.
+	
+	2. Don't set the same parameter more than once in the url.
+	
+	For example, a request to http://example.com?foobar=1&foobar=2 will not be correctly signed, because the foobar parameter is set twice.
+
+Credits
+======
+
+	SimpleOAuth is based on KQOAuth, by Johan Paul (johan.paul@d-pointer.com)
+	http://www.d-pointer.com/solutions/kqoauth/
+	
+Contact
+=======
+
+	For any information, feel free to contact me:
+	Gregory Schlomoff - gregory.schlomoff@gmail.com
+ 
