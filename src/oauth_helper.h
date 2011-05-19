@@ -28,6 +28,7 @@
 
 #include <QObject>
 #include <QSslError>
+
 #include "oauth_token.h"
 
 class QNetworkReply;

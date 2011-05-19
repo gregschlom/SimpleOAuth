@@ -26,10 +26,10 @@
 #ifndef OAUTH_TOKEN_H
 #define OAUTH_TOKEN_H
 
-#include <QPair>
 #include <QSharedData>
 
 class QUrl;
+template <class K, class T> class QMap;
 
 namespace OAuth {
 
