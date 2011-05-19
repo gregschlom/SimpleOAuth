@@ -27,6 +27,7 @@
 #define OAUTH_TOKEN_H
 
 #include <QSharedData>
+#include "simpleoauth_export.h"
 
 class QUrl;
 template <class K, class T> class QMap;
@@ -35,7 +36,7 @@ namespace OAuth {
 
 class TokenPrivate;
 
-class Token
+class SIMPLEOAUTH_EXPORT Token
 {
 public:
 	enum TokenType {

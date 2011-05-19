@@ -30,13 +30,14 @@
 #include <QSslError>
 
 #include "oauth_token.h"
+#include "simpleoauth_export.h"
 
 class QNetworkReply;
 class QNetworkAccessManager;
 
 namespace OAuth {
 
-class Helper : public QObject
+class SIMPLEOAUTH_EXPORT Helper : public QObject
 {
 	Q_OBJECT
 
