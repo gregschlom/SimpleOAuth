@@ -87,10 +87,15 @@ Token& Token::operator=(const Token& other)
 // Helper function to avoid writting "QString(QUrl::toPercentEncoding(xxx)" 10 times
 inline QString encode(QString string) { return QString(QUrl::toPercentEncoding(string)); }
 
-QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMethod)
+QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMethod, Token::HttpMethod method, const QMultiMap<QString, QString>& parameters)
 {
-	d->timestamp = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
-	d->nonce = QString::number(qrand());
+	if (d->consumerKey == "test_token") {
+		d->timestamp = "1234567890";	//Feb 13, 2009, 23:31:30 GMT
+		d->nonce = "ABCDEF";
+	} else {
+		d->timestamp = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
+		d->nonce = QString::number(qrand());
+	}
 
 	if (!requestUrl.isValid()) {
 		qWarning() << "OAuth::Token: Invalid url. The request will probably be invalid";
@@ -98,7 +103,7 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
 
 	// Step 1. Get all the oauth params for this request
 
-	QMap<QString, QString> oauthParams;
+	QMultiMap<QString, QString> oauthParams;
 
 	oauthParams.insert("oauth_consumer_key", d->consumerKey);
 	oauthParams.insert("oauth_signature_method", "HMAC-SHA1");
@@ -123,15 +128,17 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
 
 	// Step 2. Take the parameters from the url, and add the oauth params to them
 
-	QMap<QString, QString> allParams = oauthParams;
+	QMultiMap<QString, QString> allParams = oauthParams;
 	QList<QPair<QString, QString> > queryItems = requestUrl.queryItems();
 	for(int i = 0; i < queryItems.count(); ++i) {
 		allParams.insert(queryItems[i].first, queryItems[i].second);
 	}
 
+	allParams.unite(parameters);
+
 	// Step 3. Calculate the signature from those params, and append the signature to the oauth params
 
-	QString signature = generateSignature(requestUrl, allParams);
+	QString signature = generateSignature(requestUrl, allParams, method);
 	oauthParams.insert("oauth_signature", signature);
 
 	// Step 4. Concatenate all oauth params into one comma-separated string
@@ -145,7 +152,7 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
 		authHeader = "OAuth ";
 	}
 
-	QMap<QString, QString>::const_iterator p = oauthParams.constBegin();
+	QMultiMap<QString, QString>::const_iterator p = oauthParams.constBegin();
 	while (p != oauthParams.constEnd()) {
 		authHeader += QString("%1=\"%2\",").arg(p.key()).arg(encode(p.value()));
 		++p;
@@ -160,21 +167,31 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
   Generates the OAuth signature.
   \see http://oauth.net/core/1.0a/#signing_process
 */
-QString Token::generateSignature(const QUrl& requestUrl, const QMap<QString, QString>& requestParameters)
+QString Token::generateSignature(const QUrl& requestUrl, const QMultiMap<QString, QString>& requestParameters, HttpMethod method)
 {
 	QString key = encode(d->consumerSecret) + "&" + encode(d->oauthTokenSecret);
-	QString baseString = "GET&" + encode(requestUrl.toString(QUrl::RemoveQuery)) + "&";
+	QString baseString;
+
+	switch (method) {
+	case HttpGet:    baseString = "GET&";    break;
+	case HttpPost:   baseString = "POST&";   break;
+	case HttpPut:    baseString = "PUT&";    break;
+	case HttpDelete: baseString = "DELETE&"; break;
+	case HttpHead:   baseString = "HEAD&";   break;
+	}
+
+	baseString += encode(requestUrl.toString(QUrl::RemoveQuery)) + "&";
 
 	// encode and concatenate the parameters into a string
-	QString tmp;
+	QStringList params;
 	QMap<QString, QString>::const_iterator p = requestParameters.constBegin();
 	while (p != requestParameters.constEnd()) {
-		tmp += QString("%1=%2&").arg(encode(p.key())).arg(encode(p.value()));
+		params << QString("%1=%2").arg(encode(p.key())).arg(encode(p.value()));
 		++p;
 	}
-	tmp.chop(1); // Remove the last "&" character;
+	qSort(params);
 
-	baseString += encode(tmp);
+	baseString += encode(params.join("&"));
 
 	// Ok, we have the normalized base string and the key, calculate the HMAC-SHA1 signature
 	return hmac_sha1(baseString, key);

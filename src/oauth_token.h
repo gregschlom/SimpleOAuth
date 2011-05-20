@@ -27,10 +27,10 @@
 #define OAUTH_TOKEN_H
 
 #include <QSharedData>
+#include <QMultiMap>
 #include "simpleoauth_export.h"
 
 class QUrl;
-template <class K, class T> class QMap;
 
 namespace OAuth {
 
@@ -50,6 +50,14 @@ public:
 		Sasl
 	};
 
+	enum HttpMethod {
+		HttpGet,
+		HttpPost,
+		HttpPut,
+		HttpDelete,
+		HttpHead
+	};
+
 	Token();
 	Token(const Token& other);
 	Token &operator=(const Token&);
@@ -67,10 +75,13 @@ public:
 	QString tokenString() const;
 	QString tokenSecret() const;
 
-	QByteArray signRequest(const QUrl& requestUrl, Token::AuthMethod authMethod = HttpHeader);
+	QByteArray signRequest(const QUrl& requestUrl,
+	                       Token::AuthMethod authMethod = HttpHeader,
+	                       Token::HttpMethod method = HttpGet,
+	                       const QMultiMap<QString, QString>& parameters = QMultiMap<QString, QString>());
 
 private:
-	QString generateSignature(const QUrl& requestUrl, const QMap<QString, QString>& requestParameters);
+	QString generateSignature(const QUrl& requestUrl, const QMultiMap<QString, QString>& requestParameters, HttpMethod method);
 	QString hmac_sha1(const QString &message, const QString &key);
 
     friend class TokenPrivate;

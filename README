@@ -11,7 +11,7 @@ Understanding OAuth
 	1. Signing requests
 	Every request you make to the server must be signed, even if you don't have a valid access token yet. Signing your request is easy. Just call the Token::signRequest method with the URL you want to access.
 
-	Note: the request signature depends on the URL, including GET and POST parameters. Currently, only GET parameters are supported.
+	Note: the request signature depends on the URL, including GET and POST parameters.
 
 	2. Getting a valid AccessToken
 	The AccessToken is what enables you to access the protected resources on the server. To get an AccessToken, you must first get a RequestToken from the server, open a web page to let the user authorize the RequestToken, and then ask the server to exchange the user-authorized RequestToken for an AccessToken.
@@ -88,17 +88,6 @@ Basic usage
 			request.setUrl( [url of the protected resource you want to access] );
 			request.setRawHeader("Authorization", token.signRequest(request.url()));
 			m_networkManager->get(request);
-
-Limitations
-=========
-
-	1. No POST requests
-	
-	Currently, only GET requests are supported. If you need to make POST request to the server, they are likely to fail. Feel free to submit any patch to fix this.
-	
-	2. Don't set the same parameter more than once in the url.
-	
-	For example, a request to http://example.com?foobar=1&foobar=2 will not be correctly signed, because the foobar parameter is set twice.
 
 Credits
 ======
