@@ -47,8 +47,6 @@ public:
 	QString oauthToken;
 	QString oauthTokenSecret;
 	QString oauthVerifier;
-	QString timestamp;
-	QString nonce;
 };
 
 }

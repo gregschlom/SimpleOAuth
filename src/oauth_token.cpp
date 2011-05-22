@@ -40,9 +40,7 @@ TokenPrivate::TokenPrivate()
 	  callbackUrl(),
 	  oauthToken(),
 	  oauthTokenSecret(),
-	  oauthVerifier(),
-	  timestamp(),
-	  nonce()
+	  oauthVerifier()
 {
 	qsrand(QTime::currentTime().msec());
 }
@@ -55,9 +53,7 @@ TokenPrivate::TokenPrivate(const TokenPrivate& other)
 	  callbackUrl(other.callbackUrl),
 	  oauthToken(other.oauthToken),
 	  oauthTokenSecret(other.oauthTokenSecret),
-	  oauthVerifier(other.oauthVerifier),
-	  timestamp(other.timestamp),
-	  nonce(other.nonce)
+	  oauthVerifier(other.oauthVerifier)
 {
 	qsrand(QTime::currentTime().msec());
 }
@@ -87,14 +83,17 @@ Token& Token::operator=(const Token& other)
 // Helper function to avoid writting "QString(QUrl::toPercentEncoding(xxx)" 10 times
 inline QString encode(QString string) { return QString(QUrl::toPercentEncoding(string)); }
 
-QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMethod, Token::HttpMethod method, const QMultiMap<QString, QString>& parameters)
+QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMethod, Token::HttpMethod method, const QMultiMap<QString, QString>& parameters) const
 {
-	if (d->consumerKey == "test_token") {
-		d->timestamp = "1234567890";	//Feb 13, 2009, 23:31:30 GMT
-		d->nonce = "ABCDEF";
+	QString timestamp;
+	QString nonce;
+
+	if (d->consumerKey == "test_token") { // Set known values for unit-testing
+		timestamp = "1234567890";	//Feb 13, 2009, 23:31:30 GMT
+		nonce = "ABCDEF";
 	} else {
-		d->timestamp = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
-		d->nonce = QString::number(qrand());
+		timestamp = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
+		nonce = QString::number(qrand());
 	}
 
 	if (!requestUrl.isValid()) {
@@ -107,8 +106,8 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
 
 	oauthParams.insert("oauth_consumer_key", d->consumerKey);
 	oauthParams.insert("oauth_signature_method", "HMAC-SHA1");
-	oauthParams.insert("oauth_timestamp", d->timestamp);
-	oauthParams.insert("oauth_nonce", d->nonce);
+	oauthParams.insert("oauth_timestamp", timestamp);
+	oauthParams.insert("oauth_nonce", nonce);
 	oauthParams.insert("oauth_version", "1.0");
 
 	switch (d->tokenType) {
@@ -167,7 +166,7 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
   Generates the OAuth signature.
   \see http://oauth.net/core/1.0a/#signing_process
 */
-QString Token::generateSignature(const QUrl& requestUrl, const QMultiMap<QString, QString>& requestParameters, HttpMethod method)
+QString Token::generateSignature(const QUrl& requestUrl, const QMultiMap<QString, QString>& requestParameters, HttpMethod method) const
 {
 	QString key = encode(d->consumerSecret) + "&" + encode(d->oauthTokenSecret);
 	QString baseString;
@@ -202,7 +201,7 @@ QString Token::generateSignature(const QUrl& requestUrl, const QMultiMap<QString
   This method comes from the kQOAuth library (http://www.d-pointer.com/solutions/kqoauth/)
   Author: Johan Paul (johan.paul@d-pointer.com)
 */
-QString Token::hmac_sha1(const QString& message, const QString& key)
+QString Token::hmac_sha1(const QString& message, const QString& key) const
 {
 	QByteArray keyBytes = key.toAscii();
 	int keyLength;              // Length of key word
