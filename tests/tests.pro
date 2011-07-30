@@ -9,11 +9,16 @@ SOURCES += \
     Test.cpp
 
 DEFINES += SIMPLEOAUTH_STATIC_LIB
-LIBS += -L../lib/ -lsimpleoauth
+
 INCLUDEPATH += ../src
 
-POST_TARGETDEPS += \
-	"../lib/simpleoauth.lib" \
+LIBS += -L../lib/ -lsimpleoauth
+win32 {
+	POST_TARGETDEPS += "../lib/simpleoauth.lib"
+} else {
+	POST_TARGETDEPS += "../lib/libsimpleoauth.a"
+}
+
 
 HEADERS += \
     Test.h

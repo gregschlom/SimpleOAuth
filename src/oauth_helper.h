@@ -66,8 +66,8 @@ private slots:
 	void onSslErrors(QNetworkReply* reply, QList<QSslError> errors);
 
 private:
-	QNetworkAccessManager* m_networkManager;
 	Helper::OAuthError m_error;
+	QNetworkAccessManager* m_networkManager;
 	Token m_token;
 };
 }

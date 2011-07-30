@@ -28,6 +28,7 @@
 
 #include <QSharedData>
 #include <QMultiMap>
+#include <QString>
 #include "simpleoauth_export.h"
 
 class QUrl;
@@ -78,7 +79,7 @@ public:
 	QByteArray signRequest(const QUrl& requestUrl,
 	                       Token::AuthMethod authMethod = HttpHeader,
 	                       Token::HttpMethod method = HttpGet,
-	                       const QMultiMap<QString, QString>& parameters = QMultiMap<QString, QString>()) const;
+                               const QMultiMap<QString, QString>& parameters = (QMultiMap<QString, QString>())) const;
 
 private:
 	QString generateSignature(const QUrl& requestUrl, const QMultiMap<QString, QString>& requestParameters, HttpMethod method) const;

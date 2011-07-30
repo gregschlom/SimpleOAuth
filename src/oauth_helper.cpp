@@ -34,8 +34,8 @@ namespace OAuth {
 Helper::Helper(QObject* parent)
 	: QObject(parent),
 	  m_error(Helper::NoError),
-	  m_token(),
-      m_networkManager(new QNetworkAccessManager(this))
+	  m_networkManager(new QNetworkAccessManager(this)),
+	  m_token()
 {
 	connect(m_networkManager, SIGNAL(finished(QNetworkReply*)), SLOT(replyReceived(QNetworkReply*)));
 	connect(m_networkManager, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)), SLOT(onSslErrors(QNetworkReply*,QList<QSslError>)));
@@ -141,6 +141,8 @@ void Helper::replyReceived(QNetworkReply* reply)
 		}
 		emit accessTokenReceived(m_token);
 		break;
+	case Token::AccessToken: //To avoid warning on Mac OSX
+		break;
 	}
 
 	reply->deleteLater();
@@ -148,6 +150,7 @@ void Helper::replyReceived(QNetworkReply* reply)
 
 void Helper::onSslErrors(QNetworkReply* reply, QList<QSslError> errors)
 {
+	Q_UNUSED(errors);
 	reply->ignoreSslErrors();
 }
 
