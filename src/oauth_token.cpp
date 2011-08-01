@@ -92,7 +92,11 @@ QByteArray Token::signRequest(const QUrl& requestUrl, Token::AuthMethod authMeth
 		timestamp = "1234567890";	//Feb 13, 2009, 23:31:30 GMT
 		nonce = "ABCDEF";
 	} else {
+#if QT_VERSION >= 0x040700
 		timestamp = QString::number(QDateTime::currentDateTimeUtc().toTime_t());
+#else
+		timestamp = QString::number(QDateTime::currentDateTime().toUTC().toTime_t());
+#endif
 		nonce = QString::number(qrand());
 	}
 
